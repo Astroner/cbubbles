@@ -18,7 +18,7 @@ static Source* add(SourcesData* sources, char* path) {
     sources->buffer[sources->length].texture.__texture = NULL;
     sources->length++;
 
-    return &sources->buffer[sources->length];
+    return &sources->buffer[sources->length - 1];
 }
 
 SourcesType Sources = {

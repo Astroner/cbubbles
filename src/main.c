@@ -38,7 +38,7 @@ int main(){
     createObject(bubble, bubbleSource);
     
     App.addObject(app, bubble);
-    Object.setSize(bubble, 40, 40);
+    Object.setSize(bubble, 100, 100);
     Object.setPosition(bubble, 40, 40);
 
     App.start(app);

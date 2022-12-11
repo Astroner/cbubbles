@@ -104,15 +104,15 @@ static int start(AppData* app) {
     if(app->sources) {
         if(app->logs) SDL_Log("Loading sources\n");
         for(unsigned int i = 0; i < app->sources->length; i++) {
-            Source src = app->sources->buffer[i];
-            SDL_Surface* surface = IMG_Load(src.path);
+            Source* src = &app->sources->buffer[i];
+            SDL_Surface* surface = IMG_Load(src->path);
             if(!surface) {
                 return -1;
             }
-            src.texture.width = surface->w;
-            src.texture.height = surface->h;
-            src.texture.__texture = SDL_CreateTextureFromSurface(renderer, surface);
-            if(app->logs) SDL_Log("Loaded source '%s'. Width: %d, Height: %d\n", src.path, surface->w, surface->h);
+            src->texture.width = surface->w;
+            src->texture.height = surface->h;
+            src->texture.__texture = SDL_CreateTextureFromSurface(renderer, surface);
+            if(app->logs) SDL_Log("Loaded source '%s'. Width: %d, Height: %d\n", src->path, surface->w, surface->h);
             SDL_FreeSurface(surface);
         }
     } else if(app->logs) {
