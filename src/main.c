@@ -76,7 +76,7 @@ void tick(AppData* app, TickData* data) {
     }
 }
 
-int main(){
+int main(int argc, char* argv[]){
     #if defined(__MINGW)
         HWND hWnd = GetConsoleWindow();
         ShowWindow( hWnd, SW_HIDE );
