@@ -1,0 +1,15 @@
+SOURCES:=$(wildcard src/*.c) $(wildcard src/**/*.c)
+OBJECTS=$(SOURCES:.c=.o)
+EXECUTABLE=./bubbles.exe
+
+all: build
+	$(EXECUTABLE)
+
+build: $(OBJECTS)
+	gcc -o $(EXECUTABLE) $(CFLAGS) -LC:\MinGW\bin -lSDL2 -lSDL2_mixer -lSDL2_image -lmingw32 -lSDL2main $^
+
+.c.o:
+	gcc -c -Wall -Wextra -o $@ $(CFLAGS) -D__MINGW -IC:\MinGW\include $<
+
+clean:
+	rm -f $(EXECUTABLE) $(OBJECTS)

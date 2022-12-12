@@ -3,8 +3,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2_image/SDL_image.h>
+#if defined(__MINGW)
+    #include <windows.h>
+#endif // __MINGW
 
 #include "HashTable/HashTable.h"
 #include "Object/Object.h"
@@ -76,6 +77,12 @@ void tick(AppData* app, TickData* data) {
 }
 
 int main(){
+    #if defined(__MINGW)
+        HWND hWnd = GetConsoleWindow();
+        ShowWindow( hWnd, SW_HIDE );
+    #endif // __MINGW
+    
+
     srand(time(NULL));
     createTable(bubbles, MAX_OBJECTS);
 
