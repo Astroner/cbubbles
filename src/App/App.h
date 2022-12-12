@@ -38,6 +38,7 @@ typedef struct AppData {
     unsigned int FPS;
     
     void (*tick)(struct AppData* app, TickData* tickData);
+    void (*init)(struct AppData* app);
 } AppData;
 
 typedef struct {
@@ -50,12 +51,15 @@ typedef struct {
     void (*setSize)(AppData*, unsigned int width, unsigned int height);
     void (*setClearColor)(AppData*, unsigned char R, unsigned char G, unsigned char B, unsigned char A);
     void (*setExtraData)(AppData* app, void* extraData);
+    void (*setFPS)(AppData* app, unsigned int FPS);
 
     int (*addObject)(AppData*, ObjectData* object);
     void (*removeObject)(AppData*, ObjectData* object);
     
     void (*addSources)(AppData* app, SourcesData* sources);
 
+    int (*playMusic)(AppData* app, Source* music, int loops);
+    int (*playAudio)(AppData* app, Source* audio, int loops);
     int (*start)(AppData*);
 
     void (*initSceneIterator)(AppData* app, SceneIterator* iterator);
@@ -63,7 +67,7 @@ typedef struct {
     void (*resetSceneIterator)(SceneIterator* iterator);
 
     void (*setTickFunction)(AppData* app, void (*tick)(AppData* app, TickData* tickData));
-    void (*setFPS)(AppData* app, unsigned int FPS);
+    void (*setInitFunction)(AppData* app, void (*init)(AppData* app));
 } AppModule;
 
 AppModule App;

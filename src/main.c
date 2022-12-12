@@ -20,6 +20,8 @@ typedef struct AppExtra {
     TableData* bubbles;
     ObjectData* bubblesBuffer;
     Source* bubblesSource;
+    Source* bgmSource;
+    Source* popSource;
 } AppExtra;
 
 #define bubblesPerSecond 10
@@ -29,6 +31,12 @@ float msUntilNextBubble = 1000 / bubblesPerSecond;
 unsigned int nextSecondToAdd = 0;
 
 unsigned int lastSpawn = 0;
+
+void init(AppData* app) {
+    AppExtra* appData = app->extraData;
+
+    App.playMusic(app, appData->bgmSource, -1);
+}
 
 void tick(AppData* app, TickData* data) {
     static int counter = 0;
@@ -62,6 +70,7 @@ void tick(AppData* app, TickData* data) {
     while((object = App.nextObject(&iterator))) {
         if(object->y + object->height >= (float)HEIGHT) {
             Object.destroy(object);
+            App.playAudio(app, appData->popSource, 0);
         }
     }
 }
@@ -79,16 +88,21 @@ int main(){
     App.setSize(app, WIDTH, HEIGHT);
     app->logs = 1;
     App.setTickFunction(app, tick);
+    App.setInitFunction(app, init);
     App.setFPS(app, 60);
-    createSources(sources, 1);
+    createSources(sources, 3);
 
     App.addSources(app, sources);
 
     AppExtra appData = {
         .bubbles = bubbles,
         .bubblesBuffer = bubblesBuffer,
-        .bubblesSource = Sources.add(sources, "bubble.png"),
+        .bubblesSource = Sources.add(sources, "bubble.png", SOURCE_TEXTURE),
+        .bgmSource = Sources.add(sources, "bgm.mp3", SOURCE_MUSIC),
+        .popSource = Sources.add(sources, "pop.mp3", SOURCE_AUDIO),
     };
+
+    Sources.setAudioVolume(appData.popSource, 0.1f);
 
     App.setExtraData(app, &appData);
 

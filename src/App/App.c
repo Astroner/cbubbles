@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2_image/SDL_image.h>
+#include <SDL2_mixer/SDL_mixer.h>
 #include <math.h>
 
 static char* DEFAULT_TITLE = "Title";
@@ -12,6 +13,7 @@ static void init(AppData* app, TableData* objects) {
     app->title = DEFAULT_TITLE;
 
     app->objects = objects;
+    app->sources = NULL;
 
     app->clearColor[0] = 255;
     app->clearColor[1] = 255;
@@ -23,7 +25,7 @@ static void init(AppData* app, TableData* objects) {
     app->logs = 0;
 
     app->tick = NULL;
-    app->sources = NULL;
+    app->init = NULL;
 }
 
 static void addSources(AppData* app, SourcesData* sources) {
@@ -88,11 +90,37 @@ static void setFPS(AppData* app, unsigned int FPS) {
     app->FPS = FPS;
 }
 
+static void setInitFunction(AppData* app, void (*init)(AppData* app)) {
+    app->init = init;
+}
+
+static int playMusic(AppData* app, Source* music, int loops) {
+    if(music->type != SOURCE_MUSIC) {
+        if(app->logs) SDL_Log("Cannot play source '%s'. It's not a music type.\n", music->path);
+        return -1;
+    }
+    Mix_PlayMusic(music->data.music.__music, loops);
+    return 0;
+}
+
+static int playAudio(AppData* app, Source* audio, int loops) {
+    if(audio->type != SOURCE_AUDIO) {
+        if(app->logs) SDL_Log("Cannot play source '%s'. It's not a audio type.\n", audio->path);
+        return -1;
+    }
+    Mix_PlayChannel(-1, audio->data.audio.__audio, loops);
+    return 1;
+}
+
 static int start(AppData* app) {
-    if(SDL_Init(SDL_INIT_VIDEO) < 0) {
+    if(SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0) {
+        return -1;
+    }
+    if(MIX_INIT_MP3 != Mix_Init(MIX_INIT_MP3)) {
         return -1;
     }
 
+    Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 640);
     SDL_Window* window = SDL_CreateWindow(
         app->title,
         SDL_WINDOWPOS_CENTERED,
@@ -106,24 +134,46 @@ static int start(AppData* app) {
         return -1;
     }
 
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, 0);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC);
 
     if(app->sources) {
         if(app->logs) SDL_Log("Loading sources\n");
         for(unsigned int i = 0; i < app->sources->length; i++) {
             Source* src = &app->sources->buffer[i];
-            SDL_Surface* surface = IMG_Load(src->path);
-            if(!surface) {
-                return -1;
+            if(src->type == SOURCE_TEXTURE) {
+                SDL_Surface* surface = IMG_Load(src->path);
+                if(!surface) {
+                    if(app->logs) SDL_Log("Failed to loaded image source '%s'\n", src->path);
+                    return -1;
+                }
+                src->data.texture.width = surface->w;
+                src->data.texture.height = surface->h;
+                src->data.texture.__texture = SDL_CreateTextureFromSurface(renderer, surface);
+                if(app->logs) SDL_Log("Loaded image source '%s'. Width: %d, Height: %d\n", src->path, surface->w, surface->h);
+                SDL_FreeSurface(surface);
+            } else if(src->type == SOURCE_MUSIC) {
+                src->data.music.__music = Mix_LoadMUS(src->path);
+                if(!src->data.music.__music) {
+                    if(app->logs) SDL_Log("Failed to loaded music source '%s'\n", src->path);
+                    return -1;
+                }
+                if(app->logs) SDL_Log("Loaded music source '%s'.\n", src->path);
+            } else if(src->type == SOURCE_AUDIO) {
+                src->data.audio.__audio = Mix_LoadWAV(src->path);
+                if(!src->data.audio.__audio) {
+                    if(app->logs) SDL_Log("Failed to loaded audio source '%s'\n", src->path);
+                    return -1;
+                }
+                Mix_VolumeChunk(src->data.audio.__audio, (int)(MIX_MAX_VOLUME * src->data.audio.volume));
+                if(app->logs) SDL_Log("Loaded audio source '%s'.\n", src->path);
             }
-            src->texture.width = surface->w;
-            src->texture.height = surface->h;
-            src->texture.__texture = SDL_CreateTextureFromSurface(renderer, surface);
-            if(app->logs) SDL_Log("Loaded source '%s'. Width: %d, Height: %d\n", src->path, surface->w, surface->h);
-            SDL_FreeSurface(surface);
         }
     } else if(app->logs) {
         SDL_Log("Sources was not provided\n");
+    }
+
+    if(app->init) {
+        app->init(app);
     }
 
     int quit = 0;
@@ -180,7 +230,7 @@ static int start(AppData* app) {
 
             SDL_RenderCopyF(
                 renderer, 
-                object->src->texture.__texture, 
+                object->src->data.texture.__texture, 
                 NULL, 
                 &rect
             );
@@ -198,8 +248,21 @@ static int start(AppData* app) {
         }
     }
 
+    // freeing music
+    if(app->sources) {
+        for(unsigned int i = 0; i < app->sources->length; i++) {
+            Source* current = &app->sources->buffer[i];
+            if(current->type == SOURCE_MUSIC) {
+                Mix_FreeMusic(current->data.music.__music);
+            }
+            if(current->type == SOURCE_AUDIO) {
+                Mix_FreeChunk(current->data.audio.__audio);
+            }
+        }
+    }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    Mix_Quit();
     SDL_Quit();
 
     return 0;
@@ -220,5 +283,8 @@ AppModule App = {
     .setExtraData = setExtraData,
     .addSources = addSources,
     .setFPS = setFPS,
+    .setInitFunction = setInitFunction,
+    .playMusic = playMusic,
+    .playAudio = playAudio,
 };
 
