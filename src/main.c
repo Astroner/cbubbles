@@ -102,7 +102,7 @@ int main(){
         .popSource = Sources.add(sources, "pop.mp3", SOURCE_AUDIO),
     };
 
-    Sources.setAudioVolume(appData.popSource, 0.1f);
+    Sources.setAudioVolume(appData.popSource, 0.05f);
 
     App.setExtraData(app, &appData);
 
