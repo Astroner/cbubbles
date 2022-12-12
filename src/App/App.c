@@ -2,6 +2,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2_image/SDL_image.h>
+#include <math.h>
 
 static char* DEFAULT_TITLE = "Title";
 
@@ -17,9 +18,11 @@ static void init(AppData* app, TableData* objects) {
     app->clearColor[2] = 255;
     app->clearColor[3] = 255;
 
+    app->FPS = 30;
+
     app->logs = 0;
 
-    app->render = NULL;
+    app->tick = NULL;
     app->sources = NULL;
 }
 
@@ -73,12 +76,16 @@ static void resetSceneIterator(SceneIterator* iterator) {
     HashTable.resetIterator(&iterator->iterator);
 }
 
-static void setRenderFunction(AppData* app, void (*render)(struct AppData* app)) {
-    app->render = render;
+static void setTickFunction(AppData* app, void (*tick)(struct AppData* app, TickData* data)) {
+    app->tick = tick;
 }
 
 static void setExtraData(AppData* app, void* extraData) {
     app->extraData = extraData;
+}
+
+static void setFPS(AppData* app, unsigned int FPS) {
+    app->FPS = FPS;
 }
 
 static int start(AppData* app) {
@@ -121,16 +128,31 @@ static int start(AppData* app) {
 
     int quit = 0;
     SDL_Event e;
+    int once = 0;
+
+    TickData tickData = {
+        .frame = 0,
+        .time = 0,
+    };
+
+    unsigned int initialTime;
+
     while(!quit) {
-        SDL_Delay(20);
+        float msPerFrame = 1000.0f / (float)app->FPS;
+        Uint64 start = SDL_GetPerformanceCounter();
+
         while(SDL_PollEvent(&e)) {
             if(e.type == SDL_QUIT) {
                 quit = 1;
             }
         }
 
-        if(app->render) {
-            app->render(app);
+        if(!once) {
+            initialTime = SDL_GetTicks();
+        }
+        tickData.time = SDL_GetTicks() - initialTime;
+        if(app->tick) {
+            app->tick(app, &tickData);
         }
 
         SDL_SetRenderDrawColor(
@@ -147,15 +169,33 @@ static int start(AppData* app) {
 
         ObjectData* object;
         while((object = App.nextObject(&iterator))) {
-            SDL_RenderCopy(
+            SDL_FRect rect = {
+                .x = object->x,
+                .y = object->y,
+                .w = object->width,
+                .h = object->height,
+            };
+
+            
+
+            SDL_RenderCopyF(
                 renderer, 
                 object->src->texture.__texture, 
                 NULL, 
-                &object->box
+                &rect
             );
         }
         
         SDL_RenderPresent(renderer);
+        once = 1;
+        tickData.frame++;
+        Uint64 end = SDL_GetPerformanceCounter();
+        
+        float timeForFrame = (end - start) * 1000.0f / (float)SDL_GetPerformanceFrequency();
+
+        if(timeForFrame < msPerFrame) {
+            SDL_Delay(msPerFrame - timeForFrame);
+        }
     }
 
     SDL_DestroyRenderer(renderer);
@@ -176,8 +216,9 @@ AppModule App = {
     .initSceneIterator = initSceneIterator,
     .nextObject = nextObject,
     .resetSceneIterator = resetSceneIterator,
-    .setRenderFunction = setRenderFunction,
+    .setTickFunction = setTickFunction,
     .setExtraData = setExtraData,
     .addSources = addSources,
+    .setFPS = setFPS,
 };
 

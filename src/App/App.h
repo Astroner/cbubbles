@@ -17,6 +17,11 @@
     HashTable.init(name##__objects, name##__objects__buffer, maxObjectsCount);\
     App.init(name, name##__objects);\
 
+typedef struct TickData {
+    unsigned int time;
+    unsigned int frame;
+} TickData;
+
 typedef struct AppData {
     void* extraData;
 
@@ -29,8 +34,10 @@ typedef struct AppData {
 
     unsigned char clearColor[4];
     unsigned int logs;
+
+    unsigned int FPS;
     
-    void (*render)(struct AppData* app);
+    void (*tick)(struct AppData* app, TickData* tickData);
 } AppData;
 
 typedef struct {
@@ -55,7 +62,8 @@ typedef struct {
     ObjectData* (*nextObject)(SceneIterator* iterator);
     void (*resetSceneIterator)(SceneIterator* iterator);
 
-    void (*setRenderFunction)(AppData* app, void (*render)(struct AppData* app));
+    void (*setTickFunction)(AppData* app, void (*tick)(AppData* app, TickData* tickData));
+    void (*setFPS)(AppData* app, unsigned int FPS);
 } AppModule;
 
 AppModule App;

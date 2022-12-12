@@ -10,10 +10,10 @@ static void init(ObjectData* data, Source* src) {
     data->__id = initialId++;
     data->src = src;
     
-    data->box.x = 0;
-    data->box.y = 0;
-    data->box.w = 0;
-    data->box.h = 0;
+    data->x = 0;
+    data->y = 0;
+    data->width = 0;
+    data->height = 0;
 
     data->__app = NULL;
 }
@@ -28,19 +28,19 @@ static void setExtraData(ObjectData* obj, void* extraData) {
     obj->extraData = extraData;
 }
 
-static void setPosition(ObjectData* data, int x, int y) {
-    data->box.x = x;
-    data->box.y = y;
+static void setPosition(ObjectData* data, float x, float y) {
+    data->x = x;
+    data->y = y;
 }
 
-static void shiftPosition(ObjectData* data, int x, int y) {
-    data->box.x += x;
-    data->box.y += y;
+static void shiftPosition(ObjectData* data, float x, float y) {
+    data->x += x;
+    data->y += y;
 }
 
-static void setSize(ObjectData* data, int width, int height) {
-    data->box.w = width;
-    data->box.h = height;
+static void setSize(ObjectData* data, float width, float height) {
+    data->width = width;
+    data->height = height;
 }
 
 ObjectModuleType Object = {

@@ -11,19 +11,26 @@
     Object.init(name, source);\
 
 typedef struct {
-    SDL_Rect box;
     unsigned int __id;
+
+    float x;
+    float y;
+    float width;
+    float height;
+
     Source* src;
+
     void* __app;
+
     void* extraData;
 } ObjectData;
 
 typedef struct {
     void (*init)(ObjectData* data, Source* sprite);
     void (*destroy)(ObjectData*);
-    void (*setPosition)(ObjectData*, int x, int y);
-    void (*shiftPosition)(ObjectData*, int x, int y);
-    void (*setSize)(ObjectData*, int width, int height);
+    void (*setPosition)(ObjectData*, float x, float y);
+    void (*shiftPosition)(ObjectData*, float x, float y);
+    void (*setSize)(ObjectData*, float width, float height);
     void (*setExtraData)(ObjectData* obj, void* extraData);
 } ObjectModuleType;
 
